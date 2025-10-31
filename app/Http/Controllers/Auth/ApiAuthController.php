@@ -14,6 +14,7 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Password as PasswordFacade;
 use App\Traits\ApiResponse;
 
+
 class ApiAuthController extends Controller
 {
     use ApiResponse;
@@ -28,12 +29,18 @@ class ApiAuthController extends Controller
             'password' => Hash::make($val['password']),
         ]);
 
+        $user->assignRole('user');
+
         $user->sendEmailVerificationNotification();
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
       
-        return $this->success(['user' => $user,'token' => $token,'email_verified' => false] ,  'تم التسجيل بنجاح. يرجى التحقق من بريدك الإلكتروني.' ,  201);
+        return $this->success([
+        'user' => $user,'token' => $token,'email_verified' => false ,
+        'roles' => $user->getRoleNames(),
+        'permissions' => $user->getAllPermissions()->pluck('name')
+        ] ,  'تم التسجيل بنجاح. يرجى التحقق من بريدك الإلكتروني.' ,  201);
         
     }
 
@@ -132,17 +139,26 @@ class ApiAuthController extends Controller
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        return $this->success(['user' => $user, 'token' => $token,'email_verified' => $user->hasVerifiedEmail()], 'تم تسجيل الدخول بنجاح', 200);
-        
+        return $this->success(['user' => $user, 'token' => $token,
+        'roles' => $user->getRoleNames(),
+        'permissions' => $user->getAllPermissions()->pluck('name'),
+        'email_verified' => $user->hasVerifiedEmail()
+         ], 'تم تسجيل الدخول بنجاح', 200);
+    
     }
 
 
 
-    public function user(Request $request)
+      public function user(Request $request)
     {
-       
-        return $this->success(["user"=>$request->user() , 'email_verified' => $request->user()->hasVerifiedEmail()], 'تم جلب بيانات المستخدم بنجاح', 200);
-
+        $user = $request->user();
+        
+        return $this->success([
+            "user" => $user,
+            'email_verified' => $user->hasVerifiedEmail(),
+            'roles' => $user->getRoleNames(),
+            'permissions' => $user->getAllPermissions()->pluck('name')
+        ], 'تم جلب بيانات المستخدم بنجاح', 200);
     }
 
 
