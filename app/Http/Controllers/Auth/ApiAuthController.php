@@ -13,11 +13,41 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Password as PasswordFacade;
 use App\Traits\ApiResponse;
+use App\Services\UserService;
+use App\Http\Resources\UserResource;
 
 
 class ApiAuthController extends Controller
 {
     use ApiResponse;
+    protected $userService;
+
+     public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
+      /* 
+      Get users list with filters
+     */
+    public function index(Request $request)
+    {
+        $filters = [
+            'search' => $request->input('search'),
+            'role' => $request->input('role'),
+            'is_active' => $request->input('is_active'),
+        ];
+
+        $perPage = $request->input('per_page', 10);
+
+        $users = $this->userService->getUsers($filters, $perPage);
+        $total = $this->userService->getTotalCount();
+
+        return $this->success([
+            "users" => UserResource::collection($users),
+            "total" => $total
+        ], "تم جلب المستخدمين بنجاح", 200);
+    }
 
     public function register(RegisterRequest $request)
     {

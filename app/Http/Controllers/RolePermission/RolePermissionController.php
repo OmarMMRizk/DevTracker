@@ -129,7 +129,7 @@ class RolePermissionController extends Controller
      */
     public function deletePermission($id)
     {
-        $permission = Permission::findOrFail($id);
+        $permission = Permission::findById($id);
         $permission->delete();
 
         return $this->success([], 'تم حذف الصلاحية بنجاح');
